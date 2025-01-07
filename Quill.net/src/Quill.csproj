@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <PackageId>Quill</PackageId>
+    <PackageId>QuillSQL</PackageId>
     <Title>Quill .NET SDK</Title>
     <Description>Quill SDK for .NET</Description>
     <Authors>quill.co</Authors>
