@@ -65,14 +65,9 @@ public static class Program
                 var tenants = metadata.TryGetProperty("tenants", out var tenantsElement)
                     ? tenantsElement.GetRawText()
                     : JsonSerializer.Serialize(new List<string> { Quill.Tenants.TenantUtils.AllTenants });
-                var flags = metadata.TryGetProperty("flags", out var flagsElement)
-                    ? flagsElement.GetRawText()
-                    : JsonSerializer.Serialize(new List<object> { });
-                var flagsList = JsonSerializer.Deserialize<List<object>>(flags);
                 var queryParams = new QueryParams
                 {
                     Tenants = JsonSerializer.Deserialize<List<object>>(tenants),
-                    Flags = flagsList,
                     Metadata = JsonSerializer.Deserialize<IDictionary<string, object>>(metadata.GetRawText()),
                 };
                 var result = await quill.Query(queryParams);
