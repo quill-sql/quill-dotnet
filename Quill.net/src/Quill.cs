@@ -170,9 +170,11 @@ namespace Quill
                             .Cast<string>()
                     );
                 }
-                else if (tenants?.Count() > 0 && tenant == "SINGLE_TENANT" && flags != null)
+                else if (tenants?.Count() > 0 && tenant == TenantUtils.SingleTenant && flags != null)
                 {
-                    if (flags.Count() > 0 && !(flags.ElementAt(0) is string))
+                    var stringFlagList = flags.Select(flag => flag is JsonElement jsonElement ? jsonElement.GetString() : flag.ToString()).ToList();
+                    var nonNullString = stringFlagList.Where(flag => flag != null);
+                    if (flags.Count() > 0 && nonNullString.Count() != flags.Count())
                     {
                         return new Dictionary<string, object>
                         {
@@ -182,7 +184,7 @@ namespace Quill
                         };
 
                     }
-                    tenantFlags = new HashSet<string>(flags.Cast<string>());
+                    tenantFlags = new HashSet<string>(nonNullString!);
                 }
 
                 AdditionalProcessing preQueryRunQueryConfig = new AdditionalProcessing();
