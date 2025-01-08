@@ -64,9 +64,21 @@ namespace Quill.Models
 
     public class QueryParams
     {
+        /// <summary>
+        /// This can be one of the following:
+        /// - An array of Quill.Tenant.Tenant records
+        /// - An array of strings
+        /// - An array of ints
+        /// </summary>
+    
         [JsonPropertyName("tenants")]
         public IEnumerable<object>? Tenants { get; set; }
 
+        /// <summary>
+        /// Gets or sets the flags associated with the data.
+        /// This can be either an array of Quill.Tenants.TenantFlags records
+        /// or an array of strings representing the flags.
+        /// </summary>
         [JsonPropertyName("flags")]
         public IEnumerable<object>? Flags { get; set; }
 

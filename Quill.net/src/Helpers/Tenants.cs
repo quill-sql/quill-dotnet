@@ -1,68 +1,65 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Quill.Tenants
 {
+    public record Tenant
+    {
+        [JsonPropertyName("tenantField")]
+        public string TenantField { get; init; }
+        [JsonPropertyName("tenantIds")]
+        public List<object> TenantIds { get; init; }
+
+        public Tenant(string tenantField, List<object> tenantIds)
+        {
+            TenantField = tenantField;
+            TenantIds = tenantIds;
+        }
+    }
+
+    public record TenantFlags
+    {
+        [JsonPropertyName("tenantField")]
+        public string TenantField { get; init; }
+        [JsonPropertyName("flags")]
+        public List<object> Flags { get; init; }
+
+        public TenantFlags(string tenantField, List<object> flags)
+        {
+            TenantField = tenantField;
+            Flags = flags;
+        }
+    }
     public class TenantUtils
     {
 
         public const string SingleTenant = "QUILL_SINGLE_TENANT";
         public const string AllTenants = "QUILL_ALL_TENANTS";
-        public static List<object> ExtractTenantIds(IEnumerable<object> tenants)
+        public static ICollection<object> ExtractTenantIds(List<object> tenants)
         {
-            List<object> tenantIds = new List<object>() ?? new List<object>();
-
-            if (tenants is List<object> tenantList)
+            if (tenants.Count > 0)
             {
-                if (tenantList.Count > 0)
-                {
-                    var firstItem = tenantList[0];
+                var firstItem = tenants[0];
 
-                    if (firstItem is JsonElement jsonElement)
-                    {
-                        if (jsonElement.ValueKind == JsonValueKind.Object)
-                        {
-                            var tenantObject = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonElement.GetRawText());
-                            if (tenantObject != null && tenantObject.ContainsKey("tenantIds"))
-                            {
-                                var tenantIdsString = tenantObject["tenantIds"]?.ToString();
-                                var deserializedTenantIds = tenantIdsString != null ? JsonSerializer.Deserialize<List<object>>(tenantIdsString) : null;
-                                if (deserializedTenantIds != null)
-                                {
-                                    tenantIds = deserializedTenantIds;
-                                }
-                            }
-                        }
-                        else if (jsonElement.ValueKind == JsonValueKind.String || jsonElement.ValueKind == JsonValueKind.Number)
-                        {
-                            tenantIds = tenantList.Select(t => JsonSerializer.Deserialize<object>(((JsonElement)t).GetRawText()) ?? new object()).ToList();
-                        }
-                        else
-                        {
-                            throw new ArgumentException("Invalid format for tenants");
-                        }
-                    }
-                    else
-                    {
-                        throw new ArgumentException("Unsupported item type in tenants");
-                    }
+                if (firstItem is string || firstItem is int)
+                {
+                    return tenants;
+                }
+                else if (firstItem is Tenant tenantObject)
+                {
+                    return tenantObject.TenantIds;
                 }
                 else
                 {
-                    throw new ArgumentException("Tenant list is empty");
+                    throw new ArgumentException("Invalid format for tenants");
                 }
             }
-            else
-            {
-                throw new ArgumentException("Invalid format for tenants");
-            }
-
-            return tenantIds ?? new List<object>();
+            return new List<object>();
         }
 
 
         public static string ExtractTenantField(IEnumerable<object> tenants, string dashboardOwner)
         {
-            string tenantField = string.Empty;
 
             if (tenants is List<object> tenantList)
             {
@@ -70,9 +67,9 @@ namespace Quill.Tenants
                 {
                     return dashboardOwner;
                 }
-                else if (tenantList[0] is Dictionary<string, object> tenantObject && tenantObject.ContainsKey("tenantField"))
+                else if (tenantList[0] is Tenant tenantObject)
                 {
-                    tenantField = tenantObject["tenantField"]?.ToString() ?? string.Empty;
+                    return tenantObject.TenantField;
                 }
                 else
                 {
@@ -83,8 +80,6 @@ namespace Quill.Tenants
             {
                 throw new ArgumentException("Invalid format for tenants");
             }
-
-            return tenantField ?? string.Empty;
         }
     }
 }

@@ -62,12 +62,32 @@ public static class Program
                     return Results.BadRequest(new { error = "Invalid request" });
                 }
                 var metadata = request["metadata"];
-                var tenants = metadata.TryGetProperty("tenants", out var tenantsElement)
-                    ? tenantsElement.GetRawText()
-                    : JsonSerializer.Serialize(new List<string> { Quill.Tenants.TenantUtils.AllTenants });
+                List<object> tenants;
+                if (metadata.TryGetProperty("tenants", out var tenantsElement))
+                {
+                    try
+                    {
+                        tenants = JsonSerializer.Deserialize<List<Quill.Tenants.Tenant>>(tenantsElement.GetRawText())?.Cast<object>()?.ToList() ?? [];
+                    }
+                    catch (JsonException)
+                    {
+                        try 
+                        {
+                            tenants = JsonSerializer.Deserialize<List<string>>(tenantsElement.GetRawText())?.Cast<object>()?.ToList() ?? [];
+                        }
+                        catch (JsonException)
+                        {
+                            tenants = JsonSerializer.Deserialize<List<int>>(tenantsElement.GetRawText())?.Cast<object>()?.ToList() ?? [];
+                        }
+                    }
+                }
+                else
+                {
+                    tenants = new List<object> { TenantUtils.AllTenants };
+                }
                 var queryParams = new QueryParams
                 {
-                    Tenants = JsonSerializer.Deserialize<List<object>>(tenants),
+                    Tenants = tenants,
                     Metadata = JsonSerializer.Deserialize<IDictionary<string, object>>(metadata.GetRawText()),
                 };
                 var result = await quill.Query(queryParams);

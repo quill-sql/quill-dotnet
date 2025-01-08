@@ -95,7 +95,7 @@ namespace Quill
             }
             else
             {
-                _targetConnection.TenantIds = TenantUtils.ExtractTenantIds(tenants);
+                _targetConnection.TenantIds = TenantUtils.ExtractTenantIds(tenants.ToList());
             }
 
             if (flags?.Count() == 0)
@@ -115,7 +115,7 @@ namespace Quill
                 };
             }
 
-            HashSet<string> tenantFlags = new HashSet<string>();
+            HashSet<string> tenantFlags = new();
 
             try
             {
@@ -170,11 +170,9 @@ namespace Quill
                             .Cast<string>()
                     );
                 }
-                else if (tenants?.Count() > 0 && tenant == TenantUtils.SingleTenant && flags != null)
+                else if (tenants?.Count() > 0 && tenant == "QUILL_SINGLE_TENANT" && flags != null)
                 {
-                    var stringFlagList = flags.Select(flag => flag is JsonElement jsonElement ? jsonElement.GetString() : flag.ToString()).ToList();
-                    var nonNullString = stringFlagList.Where(flag => flag != null);
-                    if (flags.Count() > 0 && nonNullString.Count() != flags.Count())
+                    if (flags.Count() > 0 && !(flags.ElementAt(0) is string))
                     {
                         return new Dictionary<string, object>
                         {
@@ -184,7 +182,7 @@ namespace Quill
                         };
 
                     }
-                    tenantFlags = new HashSet<string>(nonNullString!);
+                    tenantFlags = new HashSet<string>(flags.Cast<string>());
                 }
 
                 AdditionalProcessing preQueryRunQueryConfig = new AdditionalProcessing();

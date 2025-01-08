@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using Quill.Database;
 using Quill.Connection;
+using System.Text.Json;
 
 namespace Quill.Postgres
 {
@@ -75,15 +76,43 @@ namespace Quill.Postgres
                     var row = new Dictionary<string, object>();
                     for (int i = 0; i < reader.FieldCount; i++)
                     {
-                        var value = reader.GetValue(i);
-                        row[reader.GetName(i)] = value == DBNull.Value ? null! : value;
+                        var value = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                        if (reader.GetDataTypeName(i) == "json" || reader.GetDataTypeName(i) == "jsonb")
+                        {
+                            var root = JsonDocument.Parse(value?.ToString() ?? string.Empty).RootElement;
+
+                            if (root.ValueKind == JsonValueKind.Array)
+                            {
+                                value = root.EnumerateArray().Select<JsonElement, object>(jv => jv.ValueKind switch
+                                {
+                                    JsonValueKind.String => jv.GetString() ?? string.Empty,
+                                    JsonValueKind.Number => jv.GetDouble(),
+                                    JsonValueKind.True => true,
+                                    JsonValueKind.False => false,
+                                    _ => jv.GetString() ?? string.Empty
+                                }).ToArray();
+                            }
+                            else if (root.ValueKind == JsonValueKind.Object)
+                            {
+                                value = root.EnumerateObject().ToDictionary(jv => jv.Name, jv => (object)(jv.Value.ValueKind switch
+                                {
+                                    JsonValueKind.String => jv.Value.GetString() ?? string.Empty,
+                                    JsonValueKind.Number => jv.Value.GetDouble(),
+                                    JsonValueKind.True => true,
+                                    JsonValueKind.False => false,
+                                    _ => jv.Value.GetString() ?? string.Empty
+                                }));
+                            }
+                        }
+
+                        row[reader.GetName(i)] = value!;
                     }
                     rows.Add(row);
                 }
 
                 return new QueryResult { Fields = fields, Rows = rows };
             }
-            catch (Npgsql.PostgresException pgEx)
+            catch (PostgresException pgEx)
             {
                 string errorMessage = pgEx.Message;
                 int firstColon = errorMessage.IndexOf(':');
