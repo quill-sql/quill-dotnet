@@ -12,7 +12,7 @@
     <Description>Quill SDK for .NET</Description>
     <Authors>quill.co</Authors>
     <PackageTags>sdk, dotnet</PackageTags>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
