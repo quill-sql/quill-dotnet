@@ -34,10 +34,10 @@ public static class Program
         // Create Quill instance
         var quill = new Quill.Quill(new QuillOptions
         {
-            PrivateKey = Environment.GetEnvironmentVariable("PRIVATE_KEY") ?? "",
-            DatabaseConnectionString = Environment.GetEnvironmentVariable("DB_URL") ?? "",
+            PrivateKey = Environment.GetEnvironmentVariable("MSSQL_PRIVATE_KEY") ?? "",
+            DatabaseConnectionString = Environment.GetEnvironmentVariable("MSSQL_DB_URL") ?? "",
             DatabaseConfig = null,
-            DatabaseType = Environment.GetEnvironmentVariable("DB_TYPE") ?? "postgresql",
+            DatabaseType = Environment.GetEnvironmentVariable("MSSQL_DB_TYPE") ?? "postgresql",
             IsPooled = true,
         });
 

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.Json.Serialization;
 using Quill.Connection;
 using Quill.Postgres;
+using Quill.Mssql;
 
 namespace Quill.Database
 {
@@ -18,6 +19,10 @@ namespace Quill.Database
                 case "postgres":
                 case "postgresql":
                     return PostgresUtils.FormatPostgresConfig(connectionString, isPooled);
+                case "mssql":
+                case "sqlserver":
+                case "transactsql":
+                    return MssqlUtils.FormatMssqlConfig(connectionString, isPooled);
                 case "snowflake":
                 case "bigquery":
                 case "mysql":
@@ -35,6 +40,10 @@ namespace Quill.Database
                 case "postgres":
                 case "postgresql":
                     return PostgresUtils.ConnectToPostgres((PostgresConnectionConfig)config);
+                case "mssql":
+                case "sqlserver":
+                case "transactsql":
+                    return MssqlUtils.ConnectToMssql((MssqlConnectionConfig)config);
                 case "snowflake":
                 case "bigquery":
                 case "mysql":
@@ -55,6 +64,10 @@ namespace Quill.Database
                 case "postgres":
                 case "postgresql":
                     return await PostgresUtils.RunQueryPostgresAsync(sql, connection.DataSource);
+                case "mssql":
+                case "sqlserver":
+                case "transactsql":
+                    return await MssqlUtils.RunQueryMssqlAsync(sql, connection.DataSource);
                 case "snowflake":
                 case "bigquery":
                 case "mysql":
@@ -75,6 +88,11 @@ namespace Quill.Database
                 case "postgresql":
                     await PostgresUtils.DisconnectFromPostgresAsync(connection.DataSource);
                     break;
+                case "mssql":
+                case "sqlserver":
+                case "transactsql":
+                    await MssqlUtils.DisconnectFromMssqlAsync(connection.DataSource);
+                    break;
                 case "snowflake":
                 case "bigquery":
                 case "mysql":
@@ -94,6 +112,10 @@ namespace Quill.Database
                 case "postgres":
                 case "postgresql":
                     return await PostgresUtils.GetSchemasPostgresAsync(connection.DataSource);
+                case "mssql":
+                case "sqlserver":
+                case "transactsql":
+                    return await MssqlUtils.GetSchemasMssqlAsync(connection.DataSource);
                 case "snowflake":
                 case "bigquery":
                 case "mysql":
@@ -114,6 +136,12 @@ namespace Quill.Database
                 case "postgres":
                 case "postgresql":
                     return await PostgresUtils.GetTablesBySchemaPostgresAsync(
+                        connection.DataSource,
+                        schemaNames.ToList());
+                case "mssql":
+                case "sqlserver":
+                case "transactsql":
+                    return await MssqlUtils.GetTablesBySchemaMssqlAsync(
                         connection.DataSource,
                         schemaNames.ToList());
                 case "snowflake":
@@ -137,6 +165,13 @@ namespace Quill.Database
                 case "postgres":
                 case "postgresql":
                     return await PostgresUtils.GetSchemaColumnInfoPostgresAsync(
+                        connection.DataSource,
+                        schemaName,
+                        tables.ToList());
+                case "mssql":
+                case "sqlserver":
+                case "transactsql":
+                    return await MssqlUtils.GetSchemaColumnInfoMssqlAsync(
                         connection.DataSource,
                         schemaName,
                         tables.ToList());

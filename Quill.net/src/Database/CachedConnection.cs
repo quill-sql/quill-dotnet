@@ -100,7 +100,7 @@ namespace Quill.Connection
 
         private bool IsValidDatabaseType(string type) => type switch
         {
-            "postgresql" or "snowflake" or "bigquery" or "mysql" or "clickhouse" => true,
+            "postgresql" or "snowflake" or "bigquery" or "mysql" or "clickhouse" or "transactsql" or "mssql" => true,
             _ => false
         };
     }
