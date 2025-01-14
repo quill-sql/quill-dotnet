@@ -70,9 +70,9 @@ namespace Quill.Models
         /// - An array of strings
         /// - An array of ints
         /// </summary>
-    
+
         [JsonPropertyName("tenants")]
-        public IEnumerable<object>? Tenants { get; set; }
+        public IEnumerable<dynamic>? Tenants { get; set; }
 
         /// <summary>
         /// Gets or sets the flags associated with the data.
@@ -80,7 +80,7 @@ namespace Quill.Models
         /// or an array of strings representing the flags.
         /// </summary>
         [JsonPropertyName("flags")]
-        public IEnumerable<object>? Flags { get; set; }
+        public IEnumerable<dynamic>? Flags { get; set; }
 
         [JsonPropertyName("metadata")]
         public IDictionary<string, object>? Metadata { get; set; }

@@ -3,14 +3,14 @@ using System.Text.Json.Serialization;
 
 namespace Quill.Tenants
 {
-    public record Tenant
+    public record Tenant<T>
     {
         [JsonPropertyName("tenantField")]
         public string TenantField { get; init; }
         [JsonPropertyName("tenantIds")]
-        public List<object> TenantIds { get; init; }
+        public List<T> TenantIds { get; init; }
 
-        public Tenant(string tenantField, List<object> tenantIds)
+        public Tenant(string tenantField, List<T> tenantIds)
         {
             TenantField = tenantField;
             TenantIds = tenantIds;
@@ -22,9 +22,9 @@ namespace Quill.Tenants
         [JsonPropertyName("tenantField")]
         public string TenantField { get; init; }
         [JsonPropertyName("flags")]
-        public List<object> Flags { get; init; }
+        public List<string> Flags { get; init; }
 
-        public TenantFlags(string tenantField, List<object> flags)
+        public TenantFlags(string tenantField, List<string> flags)
         {
             TenantField = tenantField;
             Flags = flags;
@@ -35,51 +35,54 @@ namespace Quill.Tenants
 
         public const string SingleTenant = "QUILL_SINGLE_TENANT";
         public const string AllTenants = "QUILL_ALL_TENANTS";
-        public static ICollection<object> ExtractTenantIds(List<object> tenants)
+        public static ICollection<T> ExtractTenantIds<T>(List<dynamic> tenants)
         {
             if (tenants.Count > 0)
             {
                 var firstItem = tenants[0];
 
-                if (firstItem is string || firstItem is int)
+                if (firstItem is T) // Check if the first item is directly of type TItem
                 {
-                    return tenants;
+                    return tenants.Cast<T>().ToList(); // Cast the entire list to TItem
                 }
-                else if (firstItem is Tenant tenantObject)
+                else if (firstItem is Tenant<T> tenantObject) // Check if the first item is a Tenant<TItem>
                 {
-                    return tenantObject.TenantIds;
+                    return tenantObject.TenantIds; // Return the TenantIds from the first tenant
                 }
                 else
                 {
                     throw new ArgumentException("Invalid format for tenants");
                 }
             }
-            return new List<object>();
+
+            return new List<T>(); // Return an empty list if there are no tenants
         }
 
 
-        public static string ExtractTenantField(IEnumerable<object> tenants, string dashboardOwner)
+        public static string ExtractTenantField<T>(IEnumerable<dynamic> tenants, string dashboardOwner)
         {
+            if (tenants is List<T> tenantList)
+            {
+                if (tenantList.Count > 0)
+                {
+                    var firstItem = tenantList[0];
 
-            if (tenants is List<object> tenantList)
-            {
-                if (tenantList.Count > 0 && (tenantList[0] is string || tenantList[0] is int))
-                {
-                    return dashboardOwner;
-                }
-                else if (tenantList[0] is Tenant tenantObject)
-                {
-                    return tenantObject.TenantField;
-                }
-                else
-                {
-                    throw new ArgumentException("Invalid format for tenants");
+                    if (firstItem is Tenant<T>) // If the first item is of type TItem (string or int)
+                    {
+                        return dashboardOwner;
+                    }
+                    else if (firstItem is Tenant<T> tenantObject) // If the first item is a Tenant<TItem>
+                    {
+                        return tenantObject.TenantField;
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Invalid format for tenants");
+                    }
                 }
             }
-            else
-            {
-                throw new ArgumentException("Invalid format for tenants");
-            }
+
+            throw new ArgumentException("Invalid format for tenants");
         }
     }
 }

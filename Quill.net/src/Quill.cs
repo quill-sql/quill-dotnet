@@ -95,7 +95,7 @@ namespace Quill
             }
             else
             {
-                _targetConnection.TenantIds = TenantUtils.ExtractTenantIds(tenants.ToList());
+                _targetConnection.TenantIds = TenantUtils.ExtractTenantIds<dynamic>(tenants.ToList());
             }
 
             if (flags?.Count() == 0)
@@ -115,7 +115,7 @@ namespace Quill
                 };
             }
 
-            HashSet<string> tenantFlags = new();
+            TenantFlags[] tenantFlags = Array.Empty<TenantFlags>();
 
             try
             {
@@ -159,33 +159,45 @@ namespace Quill
                         queries as dynamic[],
                         _targetConnection.DatabaseType
                     );
-                    var serializedFlagQueryResults = JsonSerializer.Serialize(flagQueryResults);
-
-                    tenantFlags = new HashSet<string>(
-                        ((IEnumerable<dynamic>)flagQueryResults.queryResults)
-                            .SelectMany(result => ((IEnumerable<IDictionary<string, object>>)result.Rows)
-                                .Select(row => row["quill_flag"]?.ToString())
-                            )
-                            .Where(flag => flag != null)
-                            .Cast<string>()
-                    );
-                }
-                else if (tenants?.Count() > 0 && tenant == "QUILL_SINGLE_TENANT" && flags != null)
-                {
-                    if (flags.Count() > 0 && !(flags.ElementAt(0) is string))
+                    var _metadata = JsonSerializer.Deserialize<Dictionary<string, object>>(_response["metadata"]?.ToString() ?? string.Empty);
+                    var queryOrder = JsonSerializer.Deserialize<string[]>(_metadata?["queryOrder"]?.ToString() ?? string.Empty);
+                    string[] flagResults = Array.Empty<string>();
+                    if (queryOrder != null && queryOrder is string[] tempFlagResults)
                     {
-                        return new Dictionary<string, object>
-                        {
-                            { "status", "error" },
-                            { "error", "SINGLE_TENANT only supports string[] for the flags parameter" },
-                            { "data", new Dictionary<string, object>() }
-                        };
-
+                        flagResults = tempFlagResults;
                     }
-                    tenantFlags = new HashSet<string>(flags.Cast<string>());
+                    // Print type of queryOrder
+                    if (queryOrder is not string[])
+                    {
+                        throw new Exception("Invalid response for flag query.");
+                    }
+                    tenantFlags = flagResults
+                        .Select((tenantField, index) =>
+                        {
+                            if (flagQueryResults.queryResults[index].Rows is not IEnumerable<Dictionary<string, object>> rows)
+                            {
+                                throw new Exception("Invalid response for flag query.");
+                            }
+                            var flags = rows
+                                .Select(row => row["quill_flag"] as string ?? string.Empty)
+                                .Distinct()
+                                .ToList();
+                            return new TenantFlags(tenantField, flags);
+                        }).ToArray();
+                }
+                else if (tenants?.Count() > 0 && tenant == "QUILL_SINGLE_TENANT" && flags is not null)
+                {
+                    if (flags?.Any() ?? false && flags.ElementAt(0) is not TenantFlags)
+                    {
+                        tenantFlags = new TenantFlags[] { new(TenantUtils.SingleTenant, flags.Cast<string>().ToList()) };
+                    }
+                    else
+                    {
+                        tenantFlags = flags!.Cast<TenantFlags>().ToArray();
+                    }
                 }
 
-                AdditionalProcessing preQueryRunQueryConfig = new AdditionalProcessing();
+                AdditionalProcessing preQueryRunQueryConfig = new();
                 if (metadata.TryGetValue("runQueryConfig", out var preQueryRunQueryConfigValue) && preQueryRunQueryConfigValue is JsonElement preQueryRunQueryConfigElement)
                 {
                     preQueryRunQueryConfig = JsonSerializer.Deserialize<AdditionalProcessing>(preQueryRunQueryConfigElement.GetRawText()) ?? new AdditionalProcessing();

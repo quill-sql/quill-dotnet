@@ -67,11 +67,11 @@ public static class Program
                 {
                     try
                     {
-                        tenants = JsonSerializer.Deserialize<List<Quill.Tenants.Tenant>>(tenantsElement.GetRawText())?.Cast<object>()?.ToList() ?? [];
+                        tenants = JsonSerializer.Deserialize<List<Tenant<dynamic>>>(tenantsElement.GetRawText())?.Cast<object>()?.ToList() ?? [];
                     }
                     catch (JsonException)
                     {
-                        try 
+                        try
                         {
                             tenants = JsonSerializer.Deserialize<List<string>>(tenantsElement.GetRawText())?.Cast<object>()?.ToList() ?? [];
                         }
